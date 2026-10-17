@@ -96,6 +96,14 @@ describe('checkIn', () => {
     expect(v!.photoUrl).toBeNull();
     expect(sent[0]!.a.photoUrl).toBeUndefined();
   });
+  it('a photo store that never answers does not hold the check-in up', async () => {
+    const hung: PhotoStore = { put: () => new Promise(() => {}) };
+    const started = Date.now();
+    const { visitId } = await checkIn({ ...deps, photos: hung, photoTimeoutMs: 50 }, { ...base(), photoBase64: jpeg });
+    expect(Date.now() - started).toBeLessThan(2000);
+    const [v] = await t.db.select().from(visits).where(eq(visits.id, visitId));
+    expect(v!.photoUrl).toBeNull();
+  });
   it('an invalid photo is rejected with its status and writes nothing', async () => {
     expect(await status(() => checkIn(deps, { ...base(), photoBase64: 'data:image/png;base64,AAAA' }))).toBe(400);
     expect((await t.db.select().from(visitors)).length).toBe(0);

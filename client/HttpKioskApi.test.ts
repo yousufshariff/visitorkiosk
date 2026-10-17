@@ -60,6 +60,17 @@ describe('createHttpKioskApi', () => {
     const { api } = setup(() => new Response('<html>Bad gateway</html>', { status: 502 }));
     await expect(api.searchHosts('a')).rejects.toThrow(/something went wrong/i);
   });
+  it('gives up on a request that never answers and shows the offline message', async () => {
+    const fetchImpl = vi.fn((_u: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_res, rej) => init?.signal?.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError')))),
+    ) as unknown as typeof fetch;
+    const api = createHttpKioskApi({ key: 'k', fetchImpl, timeoutMs: 20 });
+    await expect(api.searchHosts('a')).rejects.toThrow(/connect/i);
+  });
+  it('a 200 response that is not JSON gets the generic message, not a parser error', async () => {
+    const { api } = setup(() => new Response('<html>proxy page</html>', { status: 200 }));
+    await expect(api.searchHosts('a')).rejects.toThrow(/something went wrong/i);
+  });
   it('a network failure gets a kiosk-friendly message', async () => {
     const { api } = setup(() => Promise.reject(new TypeError('Failed to fetch')));
     await expect(api.searchHosts('a')).rejects.toThrow(/connect/i);

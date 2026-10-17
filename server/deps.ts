@@ -13,4 +13,6 @@ export interface Deps {
   photos: PhotoStore;
   notify: Notifier;
   now?: () => Date;
+  /** Longest to wait for photo storage before saving without the photo (default 8000). */
+  photoTimeoutMs?: number;
 }

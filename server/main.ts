@@ -13,7 +13,7 @@ async function main(): Promise<void> {
   const app = buildApp({
     deps: {
       db,
-      photos: new S3PhotoStore({ client: new S3Client({ region: config.s3Region }), bucket: config.s3Bucket }),
+      photos: new S3PhotoStore({ client: new S3Client({ region: config.s3Region, maxAttempts: 2, requestHandler: { connectionTimeout: 2_000, requestTimeout: 5_000 } }), bucket: config.s3Bucket }),
       notify: createNotifier({ fallbackSlackUrl: config.slackFallbackUrl, fallbackTeamsUrl: config.teamsFallbackUrl }),
     },
     keyHashes: config.kioskKeyHashes,

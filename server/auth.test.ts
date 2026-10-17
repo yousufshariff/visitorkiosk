@@ -39,6 +39,12 @@ describe('kioskAuth', () => {
     expect((await get(app(hashes), '/api/ping', 'x'.repeat(5000))).statusCode).toBe(401);
     expect((await get(app(hashes), '/api/ping', '')).statusCode).toBe(401);
   });
+  it.each(['/%61pi/ping', '/%61%70%69/ping', '/api/%70ing', 'http://kiosk.test/api/ping'])('cannot be bypassed by an equivalent URL form: %s', async (url) => {
+    const a = app(hashes);
+    const r = await a.inject({ method: 'GET', url });
+    expect(r.statusCode).toBe(401);
+    expect(r.body).not.toContain('"ok":true');
+  });
   it('does not accept the stored hash itself as the key', async () => {
     expect((await get(app(hashes), '/api/ping', hashes[0])).statusCode).toBe(401);
   });

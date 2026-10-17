@@ -4,7 +4,7 @@ const GENERIC = 'Something went wrong. Please ask reception for help.';
 const OFFLINE = 'Could not connect. Please check the network or ask reception for help.';
 
 /** `KioskApi` over the kiosk server's HTTP API; failures become Errors whose message is safe to show. */
-export function createHttpKioskApi(opts: { baseUrl?: string; key: string; fetchImpl?: typeof fetch }): KioskApi {
+export function createHttpKioskApi(opts: { baseUrl?: string; key: string; fetchImpl?: typeof fetch; timeoutMs?: number }): KioskApi {
   const base = (opts.baseUrl ?? '').replace(/\/$/, '');
   const doFetch = opts.fetchImpl ?? ((...a: Parameters<typeof fetch>) => fetch(...a));
 
@@ -15,6 +15,7 @@ export function createHttpKioskApi(opts: { baseUrl?: string; key: string; fetchI
         method: body === undefined ? 'GET' : 'POST',
         headers: { 'x-kiosk-key': opts.key, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
         body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(opts.timeoutMs ?? 30_000),
       });
     } catch {
       throw new Error(OFFLINE);
@@ -29,7 +30,11 @@ export function createHttpKioskApi(opts: { baseUrl?: string; key: string; fetchI
       }
       throw new Error(message);
     }
-    return (await res.json()) as T;
+    try {
+      return (await res.json()) as T;
+    } catch {
+      throw new Error(GENERIC);
+    }
   }
 
   const q = (s: string) => encodeURIComponent(s);

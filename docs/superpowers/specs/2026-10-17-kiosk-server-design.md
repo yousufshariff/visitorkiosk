@@ -35,7 +35,7 @@ The client views are unchanged; only `main.tsx` constructs `HttpKioskApi` and pa
 ## HTTP API
 All under `/api`, JSON, validated with Zod. `/healthz` is public.
 - `GET /api/hosts?q=` → `Host[]` (id, display name, department only)
-- `POST /api/visits` (CheckInInput) → `{visitId, qrToken, hostName}`
+- `POST /api/visits` (CheckInInput) → `{visitId}`
 - `POST /api/visits/scan` `{token}` → check-in of a pre-booked visit
 - `POST /api/visits/checkout` `{visitId | token}`
 - `GET /api/visits/on-site?q=` → minimal on-site list

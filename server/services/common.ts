@@ -34,12 +34,18 @@ export function targetOf(u: User): NotificationTarget {
  */
 export async function storePhoto(deps: Deps, kind: PhotoKind, dataUrl: string | undefined): Promise<{ key: string; url: string } | null> {
   if (!dataUrl) return null;
+  let timer: NodeJS.Timeout | undefined;
   try {
-    return await deps.photos.put(kind, dataUrl);
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('photo upload timed out')), deps.photoTimeoutMs ?? 8_000);
+    });
+    return await Promise.race([deps.photos.put(kind, dataUrl), deadline]);
   } catch (e) {
     if (e instanceof PhotoError) throw new AppError(e.status, e.code, e.message);
     console.warn('[photos] upload failed; continuing without a photo:', e instanceof Error ? e.message : 'unknown error');
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
