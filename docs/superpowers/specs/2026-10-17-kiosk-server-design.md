@@ -52,7 +52,7 @@ Errors: `{error:{code,message}}` with 400/401/404/409/413/500. Messages are safe
 - **Privacy:** webhook URLs, emails and phone numbers never appear in any response; logs omit webhook URLs and photo data.
 
 ## Auth
-`x-kiosk-key` header compared in constant time against SHA-256 hashes listed in `KIOSK_KEY_HASHES` (comma-separated, allows rotation). Missing/wrong → 401. The key is delivered to the kiosk as runtime config (`/config.js` is NOT used; the key is injected at build time via `VITE_KIOSK_KEY` for this phase). Note: a key in a client bundle is a device credential, not a secret from someone with the iPad; mitigated by HTTPS, per-device rotation, and minimal-field responses.
+`x-kiosk-key` header compared in constant time against SHA-256 hashes listed in `KIOSK_KEY_HASHES` (comma-separated, allows rotation). Missing/wrong → 401. The key is injected into the client at build time via `VITE_KIOSK_KEY`. Note: a key in a client bundle is a device credential, not a secret from someone with the iPad; mitigated by HTTPS, per-device rotation, and minimal-field responses.
 
 ## Configuration (env)
 `DATABASE_URL`, `S3_BUCKET`, `S3_REGION`, AWS credentials via the default provider chain, `KIOSK_KEY_HASHES`, optional `SLACK_FALLBACK_WEBHOOK`, `TEAMS_FALLBACK_WEBHOOK`, `PORT`.
