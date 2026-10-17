@@ -26,6 +26,9 @@
     "server",
     "client",
     "scripts",
-    "vitest.config.ts"
+    "src",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "tailwind.config.ts"
   ]
 }
