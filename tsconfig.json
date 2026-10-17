@@ -3,7 +3,11 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -12,7 +16,19 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vitest/globals", "node"]
+    "types": [
+      "vitest/globals",
+      "node"
+    ]
   },
-  "include": ["shared", "server", "client", "vitest.config.ts"]
+  "include": [
+    "shared",
+    "server",
+    "client",
+    "scripts",
+    "src",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "tailwind.config.ts"
+  ]
 }
