@@ -112,6 +112,7 @@ export function CheckIn({ api, onDone }: ViewProps) {
           setPhoto(p);
           setCameraFailed(false);
         }}
+        onRetake={() => setPhoto(null)}
         onError={() => setCameraFailed(true)}
       />
       {photo && (

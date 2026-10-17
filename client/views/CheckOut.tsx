@@ -18,6 +18,7 @@ export function CheckOut({ api, onDone }: ViewProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [signedOut, setSignedOut] = useState<{ name?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [qrPaused, setQrPaused] = useState(false);
   const busy = useRef(false);
 
   useEffect(() => {
@@ -86,7 +87,25 @@ export function CheckOut({ api, onDone }: ViewProps) {
           )}
         </>
       ) : (
-        <QRScanner onScan={(token) => void finish({ qrToken: token })} />
+        <>
+          <QRScanner
+            paused={qrPaused}
+            onScan={(token) => {
+              setQrPaused(true); // one attempt per scan; the camera restarts only on "Scan again"
+              void finish({ qrToken: token });
+            }}
+          />
+          {qrPaused && error && (
+            <BigButton
+              onClick={() => {
+                setError(null);
+                setQrPaused(false);
+              }}
+            >
+              Scan again
+            </BigButton>
+          )}
+        </>
       )}
 
       {error && <ErrorAlert>{error}</ErrorAlert>}

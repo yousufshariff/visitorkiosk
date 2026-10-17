@@ -37,7 +37,7 @@ export function TextField({ label, value, onChange, type = 'text', inputMode, au
         autoComplete={autoComplete}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="min-h-16 rounded-2xl border-2 border-slate-300 bg-white px-5 text-2xl"
+        className="min-h-16 select-text rounded-2xl border-2 border-slate-300 bg-white px-5 text-2xl"
       />
     </div>
   );

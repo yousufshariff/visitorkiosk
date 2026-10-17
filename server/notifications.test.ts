@@ -182,6 +182,17 @@ describe('notifyVisitorArrival / notifyDelivery', () => {
     expect(f).toHaveBeenCalledTimes(1);
   });
 
+  it('a host with only a personal Teams webhook is not also broadcast to the global Slack channel', async () => {
+    const f = fetchMock();
+    await notifyVisitorArrival(
+      visitor,
+      { teamsWebhookUrl: 'https://teams.test/mine' },
+      { fallbackSlackUrl: 'https://slack.test/global', fetchImpl: f },
+    );
+    const urls = (f as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+    expect(urls).toEqual(['https://teams.test/mine']);
+  });
+
   it('makes no requests and resolves when nothing is configured', async () => {
     const f = fetchMock();
     await expect(notifyVisitorArrival(visitor, {}, { fetchImpl: f })).resolves.toBeUndefined();

@@ -80,6 +80,7 @@ export function Delivery({ api, onDone }: ViewProps) {
             setPhoto(p);
             setCameraFailed(false);
           }}
+          onRetake={() => setPhoto(null)}
           onError={() => setCameraFailed(true)}
         />
         <BigButton onClick={() => void submit()} disabled={!ready || busy}>

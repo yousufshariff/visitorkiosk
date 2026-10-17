@@ -10,6 +10,8 @@ export interface PhotoCaptureProps {
   /** Receives a `data:image/jpeg;base64,...` string the moment a photo is taken. */
   onCapture: (base64Jpeg: string) => void;
   onError?: (err: Error) => void;
+  /** Fired when the user discards the captured photo (Retake / Try again), so the parent can drop it. */
+  onRetake?: () => void;
   facingMode?: 'user' | 'environment';
   showFaceGuide?: boolean;
 }
@@ -26,7 +28,7 @@ function describeCameraError(e: unknown): string {
   return 'The camera could not be started.';
 }
 
-export function PhotoCapture({ onCapture, onError, facingMode = 'user', showFaceGuide = true }: PhotoCaptureProps) {
+export function PhotoCapture({ onCapture, onError, onRetake, facingMode = 'user', showFaceGuide = true }: PhotoCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [phase, setPhase] = useState<Phase>('starting');
@@ -106,6 +108,7 @@ export function PhotoCapture({ onCapture, onError, facingMode = 'user', showFace
   };
 
   const restart = () => {
+    onRetake?.();
     setStill(null);
     setMessage(null);
     setPhase('starting');

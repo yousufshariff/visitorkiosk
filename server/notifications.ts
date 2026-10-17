@@ -232,8 +232,11 @@ async function notify(
 ): Promise<void> {
   try {
     const jobs: Job[] = [];
-    const slack = t.slackWebhookUrl || opts.fallbackSlackUrl;
-    const teams = t.teamsWebhookUrl || opts.fallbackTeamsUrl;
+    // The global webhooks are for hosts with no personal webhook at all; a host who set up
+    // a personal channel must not have their visitors also broadcast to the shared one.
+    const hasPersonal = Boolean(t.slackWebhookUrl || t.teamsWebhookUrl);
+    const slack = t.slackWebhookUrl || (hasPersonal ? undefined : opts.fallbackSlackUrl);
+    const teams = t.teamsWebhookUrl || (hasPersonal ? undefined : opts.fallbackTeamsUrl);
     if (slack) jobs.push({ channel: 'slack', url: slack, body: build.slack() });
     if (teams) jobs.push({ channel: 'teams', url: teams, body: build.teams() });
     await dispatch(jobs, opts.fetchImpl);

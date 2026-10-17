@@ -8,6 +8,8 @@ interface FakeScanner {
   stop: ReturnType<typeof vi.fn>;
   clear: ReturnType<typeof vi.fn>;
   emit: (text: string) => void;
+  elementId: string;
+  existedAtConstruction: boolean;
 }
 
 const h = vi.hoisted(() => ({
@@ -25,7 +27,9 @@ vi.mock('html5-qrcode', () => {
     stop = vi.fn(async () => {});
     clear = vi.fn();
     emit = (text: string) => this.onSuccess?.(text);
+    existedAtConstruction: boolean;
     constructor(public elementId: string) {
+      this.existedAtConstruction = document.getElementById(elementId) !== null;
       h.instances.push(this);
     }
   }
@@ -121,6 +125,21 @@ describe('QRScanner', () => {
     await waitFor(() => expect(h.instances[0]?.stop).toHaveBeenCalledTimes(1));
     rerender(<QRScanner onScan={vi.fn()} paused={false} />);
     await waitFor(() => expect(h.instances[1]?.start).toHaveBeenCalled());
+  });
+
+  it('each scanner run gets its own element, so a late cleanup cannot wipe the next run', async () => {
+    const { rerender } = render(<QRScanner onScan={vi.fn()} paused={false} />);
+    await started();
+    rerender(<QRScanner onScan={vi.fn()} paused />);
+    await waitFor(() => expect(h.instances[0]?.clear).toHaveBeenCalled());
+    rerender(<QRScanner onScan={vi.fn()} paused={false} />);
+    await waitFor(() => expect(h.instances[1]?.start).toHaveBeenCalled());
+    const [first, second] = h.instances;
+    expect(first!.existedAtConstruction).toBe(true);
+    expect(second!.existedAtConstruction).toBe(true);
+    expect(second!.elementId).not.toBe(first!.elementId);
+    expect(document.getElementById(first!.elementId)).toBeNull(); // old element removed after cleanup
+    expect(document.getElementById(second!.elementId)).not.toBeNull();
   });
 
   it('a parent re-render with new callbacks does not restart the scanner', async () => {

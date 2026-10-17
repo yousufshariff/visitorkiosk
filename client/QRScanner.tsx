@@ -18,6 +18,8 @@ export interface QRScannerProps {
  */
 export function QRScanner({ onScan, onError, facingMode = 'user', paused = false }: QRScannerProps) {
   const id = `qr-${useId().replace(/:/g, '')}`;
+  const hostRef = useRef<HTMLDivElement>(null);
+  const runs = useRef(0);
   const [failure, setFailure] = useState<string | null>(null);
 
   const onScanRef = useRef(onScan);
@@ -28,12 +30,18 @@ export function QRScanner({ onScan, onError, facingMode = 'user', paused = false
   });
 
   useEffect(() => {
-    if (paused) return;
+    const host = hostRef.current;
+    if (paused || !host) return;
     let cancelled = false;
     let last: { text: string; at: number } | null = null;
     setFailure(null);
 
-    const scanner = new Html5Qrcode(id);
+    // Every run scans into its own element: an earlier run's asynchronous cleanup (stop/clear)
+    // can then never wipe the video of the run that replaced it.
+    const el = document.createElement('div');
+    el.id = `${id}-${++runs.current}`;
+    host.appendChild(el);
+    const scanner = new Html5Qrcode(el.id);
     const started = scanner
       .start(
         { facingMode },
@@ -73,13 +81,14 @@ export function QRScanner({ onScan, onError, facingMode = 'user', paused = false
         } catch {
           /* element already gone */
         }
+        el.remove();
       });
     };
   }, [id, facingMode, paused]);
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <div id={id} className="w-full max-w-xl overflow-hidden rounded-3xl bg-black" />
+      <div ref={hostRef} className="w-full max-w-xl overflow-hidden rounded-3xl bg-black" />
       {failure && (
         <div role="alert" className="max-w-xl text-center text-xl text-red-600">
           {failure}

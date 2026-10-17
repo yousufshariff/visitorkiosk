@@ -8,15 +8,17 @@ const PHOTO = 'data:image/jpeg;base64,PHOTO';
 
 // Camera components are covered by their own tests; here they are replaced by buttons that drive the callbacks.
 vi.mock('./PhotoCapture', () => ({
-  PhotoCapture: ({ onCapture, onError }: { onCapture: (s: string) => void; onError?: (e: Error) => void }) => (
+  PhotoCapture: ({ onCapture, onError, onRetake }: { onCapture: (s: string) => void; onError?: (e: Error) => void; onRetake?: () => void }) => (
     <div>
       <button onClick={() => onCapture('data:image/jpeg;base64,PHOTO')}>Mock take photo</button>
+      <button onClick={() => onRetake?.()}>Mock retake</button>
       <button onClick={() => onError?.(new Error('no camera'))}>Mock camera fails</button>
     </div>
   ),
 }));
 vi.mock('./QRScanner', () => ({
-  QRScanner: ({ onScan }: { onScan: (s: string) => void }) => <button onClick={() => onScan('tok-1')}>Mock scan QR</button>,
+  QRScanner: ({ onScan, paused }: { onScan: (s: string) => void; paused?: boolean }) =>
+    paused ? null : <button onClick={() => onScan('tok-1')}>Mock scan QR</button>,
 }));
 
 type MockApi = { [K in keyof KioskApi]: ReturnType<typeof vi.fn> } & KioskApi;
@@ -151,6 +153,17 @@ describe('check-in', () => {
     expect(screen.getByRole('heading', { name: /thank/i })).toBeTruthy();
   });
 
+  it('Retake discards the photo: Check in is not offered until a new photo is taken', async () => {
+    render(<KioskApp api={api} />);
+    await startCheckIn();
+    await fillDetails();
+    await click(/Hana Host/);
+    await click('Mock take photo');
+    expect(screen.getByRole('button', { name: /^check in$/i })).toBeTruthy();
+    await click('Mock retake');
+    expect(screen.queryByRole('button', { name: /^check in$/i })).toBeNull();
+  });
+
   it('when the camera fails, "Continue without photo" still checks the visitor in', async () => {
     render(<KioskApp api={api} />);
     await startCheckIn();
@@ -206,6 +219,17 @@ describe('delivery', () => {
     expect(api.dropOff).toHaveBeenCalledWith({ carrier: 'UPS', type: 'package', recipientId: 'h1', photoBase64: PHOTO });
   });
 
+  it('Retake disables Drop off again until a new photo is taken', async () => {
+    render(<KioskApp api={api} />);
+    await click(/^delivery$/i);
+    await chooseCarrierHostType();
+    await click('Mock take photo');
+    const submit = () => screen.getByRole('button', { name: /drop off/i }) as HTMLButtonElement;
+    expect(submit().disabled).toBe(false);
+    await click('Mock retake');
+    expect(submit().disabled).toBe(true);
+  });
+
   it('a camera failure lets the courier drop off without a photo', async () => {
     render(<KioskApp api={api} />);
     await click(/^delivery$/i);
@@ -232,6 +256,20 @@ describe('check-out', () => {
     await click(/Vic Visitor/);
     expect(api.checkOut).toHaveBeenCalledWith({ visitId: 'v9' });
     expect(document.body.textContent).toMatch(/signed out/i);
+  });
+
+  it('a failed QR check-out pauses the scanner (no repeat calls) until "Scan again"', async () => {
+    api.checkOut.mockRejectedValueOnce(new Error('expired'));
+    render(<KioskApp api={api} />);
+    await click(/^check out$/i);
+    await click(/scan qr code/i);
+    await click('Mock scan QR');
+    expect(api.checkOut).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toMatch(/sign you out/i);
+    expect(screen.queryByText('Mock scan QR')).toBeNull();
+    await click(/scan again/i);
+    expect(screen.getByText('Mock scan QR')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('signs out by scanned QR code', async () => {

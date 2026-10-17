@@ -123,6 +123,15 @@ describe('PhotoCapture', () => {
     expect(getUserMedia).toHaveBeenCalledTimes(2);
   });
 
+  it('Retake tells the parent, so a discarded photo is not kept', async () => {
+    getUserMedia.mockImplementation(async () => makeStream().stream);
+    const onRetake = vi.fn();
+    render(<PhotoCapture onCapture={vi.fn()} onRetake={onRetake} />);
+    await userEvent.click(await takeButton());
+    await userEvent.click(await screen.findByRole('button', { name: /retake/i }));
+    expect(onRetake).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the face guide by default and hides it when showFaceGuide is false', async () => {
     getUserMedia.mockImplementation(async () => makeStream().stream);
     const { rerender } = render(<PhotoCapture onCapture={vi.fn()} />);
