@@ -3,11 +3,13 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { dbFromPool, type Db } from '../db/client';
 
 const SCHEMA = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../db/schema.sql'), 'utf8');
 
 export interface TestDb {
   pool: pg.Pool;
+  db: Db;
   close(): Promise<void>;
 }
 
@@ -31,6 +33,7 @@ export async function freshDb(): Promise<TestDb> {
   await pool.query(SCHEMA);
   return {
     pool,
+    db: dbFromPool(pool),
     close: async () => {
       await pool.end();
     },
